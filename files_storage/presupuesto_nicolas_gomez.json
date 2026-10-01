@@ -1,0 +1,13 @@
+{
+  "cliente": "Nicolas Gomez",
+  "lineas": [
+    {
+      "producto_id": "CUA001",
+      "cantidad": 5
+    },
+    {
+      "producto_id": "BOL003",
+      "cantidad": 10
+    }
+  ]
+}

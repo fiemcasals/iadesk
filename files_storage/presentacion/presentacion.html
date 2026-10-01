@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presentación: Construcción de IA Desk (Django + Claude API + Keys)</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0b0f19;
+            --bg-card: rgba(30, 41, 59, 0.7);
+            --border-card: rgba(148, 163, 184, 0.15);
+            --accent-cyan: #38bdf8;
+            --accent-blue: #3b82f6;
+            --accent-emerald: #10b981;
+            --accent-purple: #a855f7;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(168, 85, 247, 0.08) 0%, transparent 40%);
+            color: var(--text-main);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Progress Bar */
+        .progress-bar-container {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.08);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 100;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+            transition: width 0.3s ease;
+        }
+
+        /* Top Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 36px;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-card);
+            z-index: 10;
+        }
+
+        .header-title {
+            font-size: 1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--accent-cyan);
+            letter-spacing: 0.5px;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .badge-pill {
+            background: rgba(56, 189, 248, 0.12);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            font-family: 'Fira Code', monospace;
+        }
+
+        .btn-icon {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-card);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-icon:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--accent-cyan);
+        }
+
+        /* Main Presentation Canvas */
+        main.deck-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 40px;
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            width: min(1200px, 92vw);
+            height: min(720px, 80vh);
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 16px;
+            backdrop-filter: blur(16px);
+            padding: 44px 52px;
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.95) translateY(20px);
+            transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1) translateY(0);
+            z-index: 5;
+        }
+
+        /* Typography & Slide Components */
+        .slide-header {
+            margin-bottom: 24px;
+        }
+
+        .slide-tag {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            margin-bottom: 6px;
+            display: inline-block;
+        }
+
+        .slide-title {
+            font-size: 2.1rem;
+            font-weight: 800;
+            line-height: 1.2;
+            background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .slide-subtitle {
+            font-size: 1.05rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        .slide-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        /* Grid Layouts */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            align-items: stretch;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            align-items: stretch;
+        }
+
+        /* Cards */
+        .card {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.25s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(56, 189, 248, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .card-icon {
+            font-size: 1.6rem;
+        }
+
+        .card-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .card-desc {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .card-desc strong {
+            color: var(--accent-cyan);
+        }
+
+        .card-desc ul {
+            margin-left: 18px;
+            margin-top: 8px;
+        }
+
+        .card-desc li {
+            margin-bottom: 6px;
+        }
+
+        /* Code Blocks */
+        pre {
+            background: #060913;
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            border-radius: 10px;
+            padding: 16px 20px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: #e2e8f0;
+            overflow-x: auto;
+            user-select: text;
+        }
+
+        .code-keyword { color: #f43f5e; font-weight: 600; }
+        .code-func { color: #38bdf8; }
+        .code-str { color: #10b981; }
+        .code-comment { color: #64748b; font-style: italic; }
+        .code-var { color: #f59e0b; }
+
+        /* Flow Diagram */
+        .diagram-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin: 10px 0;
+        }
+
+        .diagram-node {
+            background: #0f172a;
+            border: 1px solid var(--accent-cyan);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+            flex: 1;
+        }
+
+        .diagram-arrow {
+            color: var(--accent-cyan);
+            font-size: 1.4rem;
+            font-weight: bold;
+        }
+
+        /* Highlight box */
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
+            border-left: 4px solid var(--accent-cyan);
+            padding: 16px 20px;
+            border-radius: 0 10px 10px 0;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        /* Footer Controls */
+        footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 36px;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid var(--border-card);
+            z-index: 10;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .nav-btn {
+            background: #1e293b;
+            color: #fff;
+            border: 1px solid var(--border-card);
+            padding: 8px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background: var(--accent-cyan);
+            color: #0b0f19;
+            border-color: var(--accent-cyan);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .slide-dots {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .dot.active {
+            background: var(--accent-cyan);
+            transform: scale(1.3);
+            box-shadow: 0 0 10px var(--accent-cyan);
+        }
+
+        /* Keyboard tips */
+        .key-hint {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: 'Fira Code', monospace;
+            color: #cbd5e1;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Progress Bar -->
+    <div class="progress-bar-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <div class="header-title">
+            <span>🤖</span>
+            <span>IA Desk Architecture & Implementation Masterclass</span>
+        </div>
+        <div class="header-controls">
+            <span class="badge-pill" id="slideCounter">Slide 1 / 10</span>
+            <button class="btn-icon" onclick="toggleFullScreen()">⛶ Pantalla Completa <span class="key-hint">F</span></button>
+        </div>
+    </header>
+
+    <!-- Slide Deck Container -->
+    <main class="deck-container">
+
+        <!-- SLIDE 1: Portada -->
+        <section class="slide active" data-index="1">
+            <div class="slide-header">
+                <span class="slide-tag">Arquitectura de Software & IA</span>
+                <h1 class="slide-title">Construcción de IA Desk desde Cero</h1>
+                <p class="slide-subtitle">Framework Django + Integración de Anthropic Claude API + Gestión Segura de Keys</p>
+            </div>
+            <div class="slide-body">
+                <div class="grid-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">🐍</span>
+                            <h3 class="card-title">Backend con Django</h3>
+                        </div>
+                        <div class="card-desc">
+                            Patrón MVC/MTV, enrutamiento desacoplado, controladores JSON REST, CORS/X-Frame control y manejo seguro de archivos locales.
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">🧠</span>
+                            <h3 class="card-title">Anthropic Claude API</h3>
+                        </div>
+                        <div class="card-desc">
+                            SDK Python oficial (<code>anthropic</code>), ingeniería de System Prompt (<code>claude.md</code>), y bucle inteligente de <strong>Tool Calling (Herramientas)</strong>.
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">🔐</span>
+                            <h3 class="card-title">Seguridad & API Keys</h3>
+                        </div>
+                        <div class="card-desc">
+                            Aislamiento mediante <code>.env</code>, inyección en variables de entorno con <code>python-dotenv</code> y Docker Compose, previniendo fugas de credenciales.
+                        </div>
+                    </div>
+                </div>
+                <div class="highlight-box">
+                    💡 <strong>Objetivo de esta presentación:</strong> Comprender la interacción exacta entre la petición web del usuario en Django, el procesamiento en backend, la llamada a la API de Claude y la ejecución autónoma de acciones.
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 2: Arquitectura y Flujo de Datos -->
+        <section class="slide" data-index="2">
+            <div class="slide-header">
+                <span class="slide-tag">Ecosistema & Flujo</span>
+                <h1 class="slide-title">Diagrama de Arquitectura del Sistema</h1>
+                <p class="slide-subtitle">Cómo se comunican el Navegador, Django, la API de Anthropic y el File System</p>
+            </div>
+            <div class="slide-body">
+                <div class="diagram-container">
+                    <div class="diagram-node">
+                        <h4 style="color:var(--accent-cyan); margin-bottom:6px;">🌐 Frontend Web</h4>
+                        <p style="font-size:0.8rem; color:var(--text-muted);">HTML5 + Vanilla JS + CSS</p>
+                        <p style="font-size:0.75rem; margin-top:4px;">Fetch asíncrono a <code>/api/chat/</code></p>
+                    </div>
+                    <div class="diagram-arrow">➔</div>
+                    <div class="diagram-node" style="border-color:var(--accent-emerald);">
+                        <h4 style="color:var(--accent-emerald); margin-bottom:6px;">🐍 Backend Django</h4>
+                        <p style="font-size:0.8rem; color:var(--text-muted);"><code>urls.py</code> + <code>views.py</code></p>
+                        <p style="font-size:0.75rem; margin-top:4px;">Gestión de <code>.env</code> y SDK</p>
+                    </div>
+                    <div class="diagram-arrow">➔</div>
+                    <div class="diagram-node" style="border-color:var(--accent-purple);">
+                        <h4 style="color:var(--accent-purple); margin-bottom:6px;">🤖 Claude API</h4>
+                        <p style="font-size:0.8rem; color:var(--text-muted);">Anthropic Cloud</p>
+                        <p style="font-size:0.75rem; margin-top:4px;">Tool Calling & Razonamiento</p>
+                    </div>
+                    <div class="diagram-arrow">➔</div>
+                    <div class="diagram-node" style="border-color:var(--accent-amber);">
+                        <h4 style="color:var(--accent-amber); margin-bottom:6px;">📁 files_storage/</h4>
+                        <p style="font-size:0.8rem; color:var(--text-muted);">File System Local</p>
+                        <p style="font-size:0.75rem; margin-top:4px;"><code>INDEX.md</code> + <code>MEMORY.md</code></p>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <h3 class="card-title" style="color:var(--accent-cyan);">1. Petición del Usuario</h3>
+                        <p class="card-desc">El usuario escribe un mensaje en la interfaz. JavaScript empaqueta el prompt y lo envía a Django mediante <code>fetch('/api/chat/')</code> en formato JSON.</p>
+                    </div>
+                    <div class="card">
+                        <h3 class="card-title" style="color:var(--accent-purple);">2. Delegación y Ejecución</h3>
+                        <p class="card-desc">Django inyecta la API Key de Anthropic, carga el system prompt y la memoria. Si Claude decide invocar una herramienta (escribir o leer un archivo), Django ejecuta la acción localmente y le devuelve el resultado.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 3: Estructura del Framework Django -->
+        <section class="slide" data-index="3">
+            <div class="slide-header">
+                <span class="slide-tag">Paso 1 · Framework Django</span>
+                <h1 class="slide-title">Estructura del Proyecto en Django</h1>
+                <p class="slide-subtitle">Organización limpia separando configuración (<code>core/</code>) de lógica de aplicación (<code>app/</code>)</p>
+            </div>
+            <div class="slide-body">
+                <div class="grid-2">
+                    <div>
+                        <pre><code>iaDesk/
+├── <span class="code-var">core/</span>                  <span class="code-comment"># Configuración central Django</span>
+│   ├── <span class="code-str">settings.py</span>        <span class="code-comment"># Variables, apps, middleware</span>
+│   ├── <span class="code-str">urls.py</span>            <span class="code-comment"># Router raíz de URLs</span>
+│   └── <span class="code-str">wsgi.py</span>            <span class="code-comment"># Punto de entrada Web Server</span>
+├── <span class="code-var">app/</span>                   <span class="code-comment"># Módulo principal de la aplicación</span>
+│   ├── <span class="code-str">views.py</span>           <span class="code-comment"># Controladores de IA y Archivos</span>
+│   ├── <span class="code-str">urls.py</span>            <span class="code-comment"># Rutas API de la app</span>
+│   ├── <span class="code-str">templates/</span>         <span class="code-comment"># index.html</span>
+│   └── <span class="code-str">static/</span>            <span class="code-comment"># CSS, JS, imágenes</span>
+├── <span class="code-var">files_storage/</span>         <span class="code-comment"># Directorio de trabajo local</span>
+└── <span class="code-str">manage.py</span>              <span class="code-comment"># CLI de Django</span></code></pre>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">⚙️</span>
+                            <h3 class="card-title">Conceptos Clave de Django</h3>
+                        </div>
+                        <div class="card-desc">
+                            <ul>
+                                <li><strong>Modularidad:</strong> La lógica de negocio y endpoints viven dentro de <code>app/views.py</code>.</li>
+                                <li><strong>Desacoplamiento:</strong> Las plantillas HTML y estáticos están centralizados sin mezclar código backend con presentación.</li>
+                                <li><strong>Almacenamiento Aislado:</strong> <code>STORAGE_DIR</code> se define en <code>settings.py</code> apuntando a <code>files_storage/</code> para fácil portabilidad.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 4: Configuración de Settings y Middleware -->
+        <section class="slide" data-index="4">
+            <div class="slide-header">
+                <span class="slide-tag">Paso 2 · Django Settings</span>
+                <h1 class="slide-title">Configuración Crítica en <code>settings.py</code></h1>
+                <p class="slide-subtitle">Ajustes de middleware, almacenamiento local, y seguridad de cabeceras</p>
+            </div>
+            <div class="slide-body">
+                <div class="grid-2">
+                    <div>
+                        <pre><code><span class="code-comment"># core/settings.py</span>
+<span class="code-keyword">from</span> pathlib <span class="code-keyword">import</span> Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+<span class="code-comment"># Carpeta física de almacenamiento</span>
+STORAGE_DIR = BASE_DIR / <span class="code-str">'files_storage'</span>
+
+INSTALLED_APPS = [
+    <span class="code-comment"># Apps internas de Django...</span>
+    <span class="code-str">'app'</span>,
+]
+
+<span class="code-comment"># Permitir iframes y visores del mismo origen</span>
+X_FRAME_OPTIONS = <span class="code-str">'SAMEORIGIN'</span>
+
+TEMPLATES = [{
+    <span class="code-str">'DIRS'</span>: [BASE_DIR / <span class="code-str">'app'</span> / <span class="code-str">'templates'</span>],
+    <span class="code-str">'APP_DIRS'</span>: <span class="code-keyword">True</span>,
+}]</code></pre>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">🛡️</span>
+                            <h3 class="card-title">Puntos Clave de Seguridad</h3>
+                        </div>
+                        <div class="card-desc">
+                            <ul>
+                                <li><strong><code>STORAGE_DIR</code> Seguro:</strong> Centraliza la ruta absoluta para evitar accesos indebidos fuera de la carpeta designada.</li>
+                                <li><strong><code>X_FRAME_OPTIONS = 'SAMEORIGIN'</code>:</strong> Permite que vistas previas embebidas funcionen de manera segura dentro de la aplicación.</li>
+                                <li><strong><code>ALLOWED_HOSTS</code>:</strong> Define qué dominios o IPs tienen autorización para consultar el servidor Django.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 5: Enrutamiento y URLs -->
+        <section class="slide" data-index="5">
+            <div class="slide-header">
+                <span class="slide-tag">Paso 3 · URLs & Routing</span>
+                <h1 class="slide-title">Enrutamiento de Peticiones (<code>urls.py</code>)</h1>
+                <p class="slide-subtitle">Conectando las rutas del navegador y los endpoints REST con las vistas de Django</p>
+            </div>
+            <div class="slide-body">
+                <div class="grid-2">
+                    <div>
+                        <pre><code><span class="code-comment"># app/urls.py</span>
+<span class="code-keyword">from</span> django.urls <span class="code-keyword">import</span> path
+<span class="code-keyword">from</span> . <span class="code-keyword">import</span> views
+
+urlpatterns = [
+    <span class="code-comment"># 1. Vista principal HTML</span>
+    path(<span class="code-str">''</span>, views.index, name=<span class="code-str">'index'</span>),
+
+    <span class="code-comment"># 2. Endpoint del Agente Inteligente</span>
+    path(<span class="code-str">'api/chat/'</span>, views.ai_chat, name=<span class="code-str">'ai_chat'</span>),
+
+    <span class="code-comment"># 3. CRUD de Archivos Locales</span>
+    path(<span class="code-str">'api/files/'</span>, views.file_crud, name=<span class="code-str">'file_crud'</span>),
+    path(<span class="code-str">'api/files/raw/'</span>, views.file_raw, name=<span class="code-str">'file_raw'</span>),
+    path(<span class="code-str">'api/folders/'</span>, views.folder_crud, name=<span class="code-str">'folder_crud'</span>),
+]</code></pre>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">🔀</span>
+                            <h3 class="card-title">Mapeo de Funcionalidades</h3>
+                        </div>
+                        <div class="card-desc">
+                            <ul>
+                                <li><strong><code>views.index</code>:</strong> Renderiza la plantilla principal <code>index.html</code>.</li>
+                                <li><strong><code>views.ai_chat</code>:</strong> Recibe los mensajes del usuario, administra la memoria y se conecta con Anthropic.</li>
+                                <li><strong><code>views.file_crud</code>:</strong> Permite listar, leer, crear y guardar archivos en tiempo real desde la interfaz o por orden de la IA.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 6: Gestión Segura de API Keys -->
+        <section class="slide" data-index="6">
+            <div class="slide-header">
+                <span class="slide-tag">Paso 4 · Seguridad & API Keys</span>
+                <h1 class="slide-title">Manejo Seguro de Credenciales y <code>.env</code></h1>
+                <p class="slide-subtitle">Buenas prácticas para nunca exponer ni quemar API Keys en el código fuente</p>
+            </div>
+            <div class="slide-body">
+                <div class="grid-2">
+                    <div class="card" style="border-color:var(--accent-rose);">
+                        <div class="card-header">
+                            <span class="card-icon">❌</span>
+                            <h3 class="card-title" style="color:var(--accent-rose);">Mala Práctica: Hardcoding</h3>
+                        </div>
+                        <div class="card-desc">
+                            <pre style="border-color:var(--accent-rose);"><code><span class="code-comment"># ¡PELIGRO! NUNCA HACER ESTO:</span>
+api_key = <span class="code-str">"sk-ant-api03-xxxx-secret-key"</span>
+client = anthropic.Anthropic(api_key=api_key)</code></pre>
+                            <p style="margin-top:10px;">Si subes este archivo a GitHub, bots automatizados robarán tu clave en segundos, consumiendo saldo o agotando cuotas.</p>
+                        </div>
+                    </div>
+
+                    <div class="card" style="border-color:var(--accent-emerald);">
+                        <div class="card-header">
+                            <span class="card-icon">✅</span>
+                            <h3 class="card-title" style="color:var(--accent-emerald);">Buena Práctica: Variables de Entorno</h3>
+                        </div>
+                        <div class="card-desc">
+                            <pre style="border-color:var(--accent-emerald);"><code><span class="code-comment"># .env (Agregado a .gitignore)</span>
+ANTHROPIC_API_KEY=sk-ant-api03-xxxx...
+
+<span class="code-comment"># En Python:</span>
+<span class="code-keyword">import</span> os
+api_key = os.environ.get(<span class="code-str">'ANTHROPIC_API_KEY'</span>)
+client = anthropic.Anthropic(api_key=api_key)</code></pre>
+                            <p style="margin-top:10px;">El archivo <code>.env</code> permanece únicamente en tu máquina local o contenedor Docker y se documenta mediante un <code>.env.example</code> limpio.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="highlight-box">
+                    🔒 <strong>Regla de Oro:</strong> El archivo <code>.env</code> NUNCA debe commitearse. Solo se comparte <code>.env.example</code> con variables vacías para guiar la instalación.
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 7: Inicialización del SDK de Anthropic -->
+        <section class="slide" data-index="7">
+            <div class="slide-header">
+                <span class="slide-tag">Paso 5 · SDK Anthropic</span>
+                <h1 class="slide-title">Conectando Django con Anthropic Claude</h1>
+                <p class="slide-subtitle">Inicialización del cliente y configuración de parámetros en <code>views.py</code></p>
+            </div>
+            <div class="slide-body">
+                <div class="grid-2">
+                    <div>
+                        <pre><code><span class="code-keyword">import</span> os
+<span class="code-keyword">import</span> anthropic
+
+<span class="code-func">def</span> <span class="code-func">ai_chat</span>(request):
+    api_key = os.environ.get(<span class="code-str">"ANTHROPIC_API_KEY"</span>)
+    <span class="code-keyword">if</span> <span class="code-keyword">not</span> api_key:
+        <span class="code-keyword">return</span> JsonResponse({<span class="code-str">"error"</span>: <span class="code-str">"Falta ANTHROPIC_API_KEY"</span>}, status=<span class="code-var">500</span>)
+
+    <span class="code-comment"># 1. Instanciar cliente oficial de Anthropic</span>
+    client = anthropic.Anthropic(api_key=api_key)
+
+    <span class="code-comment"># 2. Cargar System Prompt desde claude.md</span>
+    system_prompt = Path(<span class="code-str">"claude.md"</span>).read_text(encoding=<span class="code-str">"utf-8"</span>)
+
+    <span class="code-comment"># 3. Invocar al modelo</span>
+    response = client.messages.create(
+        model=<span class="code-str">"claude-3-7-sonnet-20250219"</span>,
+        max_tokens=<span class="code-var">4096</span>,
+        system=system_prompt,
+        messages=conversation_history,
+        tools=available_tools
+    )</code></pre>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">🧩</span>
+                            <h3 class="card-title">Parámetros Esenciales</h3>
+                        </div>
+                        <div class="card-desc">
+                            <ul>
+                                <li><strong><code>model</code>:</strong> El modelo asignado para razonar y decidir herramientas (ej: Claude 3.7 Sonnet).</li>
+                                <li><strong><code>system</code>:</strong> Instrucciones globales de rol y conducta inyectadas desde <code>claude.md</code>.</li>
+                                <li><strong><code>messages</code>:</strong> Array con el historial de mensajes estructurados <code>[{"role": "user", ...}, ...]</code>.</li>
+                                <li><strong><code>tools</code>:</strong> Especificación JSON de herramientas disponibles para el agente.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 8: Mecánica de Tool Calling -->
+        <section class="slide" data-index="8">
+            <div class="slide-header">
+                <span class="slide-tag">Paso 6 · Tool Calling</span>
+                <h1 class="slide-title">Bucle de Ejecución de Herramientas</h1>
+                <p class="slide-subtitle">Cómo Claude decide ejecutar código o crear archivos y Django lo concreta</p>
+            </div>
+            <div class="slide-body">
+                <div class="grid-2">
+                    <div>
+                        <pre><code><span class="code-comment"># Bucle de Tool Calling en views.py</span>
+<span class="code-keyword">while</span> response.stop_reason == <span class="code-str">"tool_use"</span>:
+    tool_results = []
+    <span class="code-keyword">for</span> block <span class="code-keyword">in</span> response.content:
+        <span class="code-keyword">if</span> block.type == <span class="code-str">"tool_use"</span>:
+            <span class="code-comment"># 1. Django ejecuta la acción local</span>
+            result = execute_local_tool(block.name, block.input)
+            
+            <span class="code-comment"># 2. Registra el resultado</span>
+            tool_results.append({
+                <span class="code-str">"type"</span>: <span class="code-str">"tool_result"</span>,
+                <span class="code-str">"tool_use_id"</span>: block.id,
+                <span class="code-str">"content"</span>: str(result)
+            })
+
+    <span class="code-comment"># 3. Re-enviar respuesta de la herramienta a Claude</span>
+    messages.append({<span class="code-str">"role"</span>: <span class="code-str">"assistant"</span>, <span class="code-str">"content"</span>: response.content})
+    messages.append({<span class="code-str">"role"</span>: <span class="code-str">"user"</span>, <span class="code-str">"content"</span>: tool_results})
+    response = client.messages.create(...)</code></pre>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">🛠️</span>
+                            <h3 class="card-title">Herramientas Nativas Disponibles</h3>
+                        </div>
+                        <div class="card-desc">
+                            <ul>
+                                <li><strong><code>read_file</code>:</strong> Permite a Claude inspeccionar el contenido de cualquier archivo en <code>files_storage/</code>.</li>
+                                <li><strong><code>write_file</code>:</strong> Permite a Claude escribir o sobrescribir archivos reales en disco.</li>
+                                <li><strong><code>append_memory</code>:</strong> Agrega nuevas decisiones o acuerdos en <code>MEMORY.md</code>.</li>
+                                <li><strong><code>update_memory</code>:</strong> Reorganiza las secciones activas de la memoria permanente.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 9: Sistema de Memoria y Enrutador Semántico -->
+        <section class="slide" data-index="9">
+            <div class="slide-header">
+                <span class="slide-tag">Paso 7 · Memoria Continua</span>
+                <h1 class="slide-title">Memoria Continua y Enrutador Semántico</h1>
+                <p class="slide-subtitle">Estrategia para retener contexto sin saturar la ventana de tokens de la API</p>
+            </div>
+            <div class="slide-body">
+                <div class="grid-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">🗂️</span>
+                            <h3 class="card-title">1. <code>INDEX.md</code></h3>
+                        </div>
+                        <div class="card-desc">
+                            <strong>Router Semántico de Archivos:</strong>
+                            <p>Catálogo liviano con temas, resumen y cuándo consultar cada documento. Claude lo lee primero para saber qué archivo abrir sin cargar todo a ciegas.</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">🧠</span>
+                            <h3 class="card-title">2. <code>MEMORY.md</code></h3>
+                        </div>
+                        <div class="card-desc">
+                            <strong>Memoria Persistente de Negocio:</strong>
+                            <p>Almacena decisiones técnicas, perfil del usuario, lineamientos y tareas activas. Permanece intacta entre reinicios del servidor.</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">💬</span>
+                            <h3 class="card-title">3. Ventana Deslizante</h3>
+                        </div>
+                        <div class="card-desc">
+                            <strong>Historial de Conversación:</strong>
+                            <p>Mantiene los últimos N mensajes en <code>CHAT_HISTORY.json</code> para fluidez conversacional inmediata, evitando desbordar el límite de tokens.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="highlight-box">
+                    💡 <strong>Ahorro de Tokens:</strong> Al consultar primero el índice semántico, Claude solo lee los archivos estrictamente necesarios para la consulta del usuario.
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 10: Resumen y Checklist de Despliegue -->
+        <section class="slide" data-index="10">
+            <div class="slide-header">
+                <span class="slide-tag">Conclusión & Buenas Prácticas</span>
+                <h1 class="slide-title">Checklist para Despliegue & Resumen</h1>
+                <p class="slide-subtitle">Principios fundamentales para dominar Django + APIs de Modelos de Lenguaje</p>
+            </div>
+            <div class="slide-body">
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">📋</span>
+                            <h3 class="card-title">Checklist de Integración</h3>
+                        </div>
+                        <div class="card-desc">
+                            <ul>
+                                <li>✅ <strong>API Key en <code>.env</code>:</strong> Nunca en archivos de código fuente.</li>
+                                <li>✅ <strong><code>X_FRAME_OPTIONS</code>:</strong> Habilitar <code>'SAMEORIGIN'</code> para previsualización de documentos.</li>
+                                <li>✅ <strong>Validación de Rutas:</strong> Asegurar que las rutas apunten siempre dentro de <code>STORAGE_DIR</code>.</li>
+                                <li>✅ <strong>Manejo de Errores:</strong> Capturar excepciones de API con respuestas JSON informativas.</li>
+                                <li>✅ <strong>Mantenimiento de <code>INDEX.md</code>:</strong> Actualizar el índice cada vez que se cree un archivo nuevo.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">🚀</span>
+                            <h3 class="card-title">Flujo Completo en Producción</h3>
+                        </div>
+                        <div class="card-desc">
+                            <p>1. Iniciar contenedor con <code>docker compose up --build</code>.</p>
+                            <p style="margin-top:6px;">2. Django carga <code>.env</code> de forma segura y expone la interfaz web.</p>
+                            <p style="margin-top:6px;">3. El usuario envía órdenes desde el frontend.</p>
+                            <p style="margin-top:6px;">4. Claude analiza <code>INDEX.md</code>, ejecuta herramientas locales en <code>files_storage/</code> y responde de forma contextual y autónoma.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="highlight-box" style="text-align:center;">
+                    🎉 <strong>¡Sistema Completo y Funcional!</strong> Dominando estos conceptos tienes un entorno profesional de desarrollo con Inteligencia Artificial conectada a sistemas reales.
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer Controls -->
+    <footer>
+        <div class="nav-buttons">
+            <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ Anterior <span class="key-hint">←</span></button>
+            <button class="nav-btn" id="nextBtn" onclick="nextSlide()">Siguiente ▶ <span class="key-hint">→</span></button>
+        </div>
+
+        <div class="slide-dots" id="slideDots"></div>
+
+        <div style="font-size:0.85rem; color:var(--text-muted);">
+            Usa <span class="key-hint">←</span> / <span class="key-hint">→</span> o <span class="key-hint">Espacio</span> para navegar
+        </div>
+    </footer>
+
+    <!-- Presentation Controller JS -->
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        let currentSlide = 1;
+
+        const progressBar = document.getElementById('progressBar');
+        const slideCounter = document.getElementById('slideCounter');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const slideDotsContainer = document.getElementById('slideDots');
+
+        // Generar dots dinámicamente
+        slides.forEach((_, idx) => {
+            const dot = document.createElement('div');
+            dot.className = 'dot' + (idx === 0 ? ' active' : '');
+            dot.onclick = () => goToSlide(idx + 1);
+            slideDotsContainer.appendChild(dot);
+        });
+
+        const dots = document.querySelectorAll('.dot');
+
+        function updateSlideUI() {
+            slides.forEach((s, idx) => {
+                const isActive = (idx + 1) === currentSlide;
+                s.classList.toggle('active', isActive);
+            });
+
+            dots.forEach((d, idx) => {
+                d.classList.toggle('active', (idx + 1) === currentSlide);
+            });
+
+            // Actualizar contador y barra de progreso
+            slideCounter.innerText = `Slide ${currentSlide} / ${totalSlides}`;
+            const progress = ((currentSlide - 1) / (totalSlides - 1)) * 100;
+            progressBar.style.width = `${progress}%`;
+
+            // Botones Anterior / Siguiente
+            prevBtn.disabled = (currentSlide === 1);
+            nextBtn.disabled = (currentSlide === totalSlides);
+        }
+
+        function goToSlide(n) {
+            if (n >= 1 && n <= totalSlides) {
+                currentSlide = n;
+                updateSlideUI();
+            }
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                currentSlide++;
+                updateSlideUI();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                currentSlide--;
+                updateSlideUI();
+            }
+        }
+
+        // Navegación con teclado
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+                prevSlide();
+            } else if (e.key === 'Home') {
+                goToSlide(1);
+            } else if (e.key === 'End') {
+                goToSlide(totalSlides);
+            } else if (e.key.toLowerCase() === 'f') {
+                toggleFullScreen();
+            }
+        });
+
+        // Pantalla completa
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.error(`Error al entrar en pantalla completa: ${err.message}`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // Inicializar
+        updateSlideUI();
+    </script>
+</body>
+</html>

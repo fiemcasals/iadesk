@@ -1,0 +1,36 @@
+{
+  "numero_presupuesto": "PRES-20250116-EL001",
+  "fecha": "2025-01-16",
+  "cliente": "Esteban López",
+  "lineas": [
+    {
+      "producto_id": "CUA002",
+      "producto_nombre": "Cuaderno Cuadriculado A4 80 Hojas",
+      "categoria": "cuadernos",
+      "cantidad": 20,
+      "precio_unitario": 2.00,
+      "descuento_porcentaje": 5,
+      "precio_con_descuento": 1.90,
+      "subtotal": 38.00,
+      "ahorro": 2.00
+    },
+    {
+      "producto_id": "BOL003",
+      "producto_nombre": "Bolígrafo Gel Premium",
+      "categoria": "bolígrafos",
+      "cantidad": 15,
+      "precio_unitario": 1.20,
+      "descuento_porcentaje": 0,
+      "precio_con_descuento": 1.20,
+      "subtotal": 18.00,
+      "ahorro": 0.00
+    }
+  ],
+  "resumen": {
+    "total_sin_descuento": 56.00,
+    "total_descuentos": 2.00,
+    "total_final": 54.00,
+    "descuento_promedio_porcentaje": 3.57
+  },
+  "notas": "Presupuesto válido por 30 días"
+}

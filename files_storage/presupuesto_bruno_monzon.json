@@ -1,0 +1,13 @@
+{
+  "cliente": "Bruno Monzon",
+  "lineas": [
+    {
+      "producto_id": "BOL003",
+      "cantidad": 30
+    },
+    {
+      "producto_id": "CUA003",
+      "cantidad": 10
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IA Desk - Asistente Autónomo & Copiloto</title>
+    <!-- Favicon inline SVG para evitar 404 -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+    <!-- Renderizador Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Estilos CSS separados -->
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+        <h2 style="margin:0;">🤖 Panel IA Desk (Copiloto Autónomo + Memoria Continua)</h2>
+        <div style="display:flex; align-items:center; gap: 10px;">
+            <label style="font-size:0.85rem; color:#94a3b8; font-weight:600;">📁 Módulo / Ámbito:</label>
+            <select id="folderSelect" onchange="changeFolder(this.value)" style="background:#1e293b; color:#38bdf8; border:1px solid #334155; padding:6px 12px; border-radius:6px; font-weight:600; cursor:pointer;">
+                <option value="">📂 Raíz Global (files_storage/)</option>
+            </select>
+            <button onclick="createSubfolderPrompt()" style="padding: 6px 12px; font-size:0.85rem; background: #0284c7;">+ Subcarpeta</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Columna 1: Explorador de Archivos y Carpetas -->
+        <div class="panel" id="panelFiles">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="margin:0;">📁 Archivos en Disco</h3>
+                <div style="display:flex; gap:6px;">
+                    <button style="padding: 4px 8px; font-size:0.8rem; background: #334155;" onclick="loadFiles()" title="Refrescar lista">🔄</button>
+                    <button class="btn-expand" style="padding: 4px 8px; font-size:0.8rem; background: #1e293b; border: 1px solid #475569;" onclick="toggleExpand('panelFiles')" title="Expandir a pantalla completa">⛶</button>
+                </div>
+            </div>
+            <p style="font-size:0.8rem; color:#64748b; margin:0;">Puedes editar en VS Code o pedirle a Claude que cree archivos automáticamente.</p>
+            <ul id="filesList" class="file-list"></ul>
+            <input type="text" id="newFilename" placeholder="subcarpeta/archivo.md">
+            <button onclick="createFile()">+ Crear Archivo / Ruta</button>
+        </div>
+
+        <!-- Columna 2: Editor Rápido / Visor PDF -->
+        <div class="panel" id="panelEditor">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 id="currentFileTitle" style="margin:0;">📝 Visor / Editor</h3>
+                <div style="display:flex; gap:6px;">
+                    <a id="downloadPdfBtn" href="#" target="_blank" style="display:none; padding: 4px 8px; font-size:0.8rem; background: #0284c7; color:#fff; text-decoration:none; border-radius:6px; font-weight:600;" title="Abrir en pestaña nueva">↗ Abrir</a>
+                    <button style="padding: 4px 8px; font-size:0.8rem; background: #334155;" onclick="deselectFile()">✕ Deseleccionar</button>
+                    <button class="btn-expand" style="padding: 4px 8px; font-size:0.8rem; background: #1e293b; border: 1px solid #475569;" onclick="toggleExpand('panelEditor')" title="Expandir a pantalla completa">⛶</button>
+                </div>
+            </div>
+            
+            <!-- Editor de Texto / Markdown / Código -->
+            <textarea id="fileEditor" placeholder="Selecciona un archivo del listado para ver o editar su contenido aquí..."></textarea>
+            
+            <!-- Visor PDF embebido nativo -->
+            <iframe id="pdfViewer" style="display:none; flex-grow:1; width:100%; height:100%; border:none; border-radius:6px; background:#fff;"></iframe>
+            
+            <div id="editorControls" style="display:flex; gap:10px;">
+                <button id="saveBtn" style="flex:1;" onclick="saveFile()">💾 Guardar en Disco</button>
+                <button class="danger" onclick="deleteFile()">🗑️ Eliminar</button>
+            </div>
+        </div>
+
+        <!-- Columna 3: Interacción con Claude (Copiloto con Herramientas y Memoria) -->
+        <div class="panel" id="panelAI">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 5px;">
+                <h3 style="margin:0;">🧠 Copiloto Claude</h3>
+                <div style="display:flex; gap:6px;">
+                    <button style="padding: 4px 8px; font-size:0.75rem; background: #334155;" onclick="clearWindow()" title="Limpia el texto visual de la pantalla">🧹 Limpiar</button>
+                    <button class="danger" style="padding: 4px 8px; font-size:0.75rem;" onclick="clearFullHistory()" title="Borra todo el historial guardado en el servidor">🗑️ Borrar</button>
+                    <button class="btn-expand" style="padding: 4px 8px; font-size:0.75rem; background: #1e293b; border: 1px solid #475569;" onclick="toggleExpand('panelAI')" title="Expandir a pantalla completa">⛶</button>
+                </div>
+            </div>
+            
+            <!-- Feed de Conversación con Máximo Espacio -->
+            <div id="aiOutput" class="chat-container">
+                <div class="chat-placeholder">El historial de respuestas y acciones ejecutadas aparecerá aquí...</div>
+            </div>
+
+            <!-- Barra de Entrada de Mensajes al Pie -->
+            <div class="chat-input-bar">
+                <textarea id="aiPrompt" placeholder="Escribe a Claude... (Enter para enviar, Shift+Enter para nueva línea)" rows="2"></textarea>
+                <button id="sendBtn" onclick="askAI()">🚀 Enviar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script JS separado -->
+    <script src="{% static 'js/main.js' %}"></script>
+</body>
+</html>

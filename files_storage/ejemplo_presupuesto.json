@@ -1,0 +1,18 @@
+{
+  "cliente": "Mauricio Casals",
+  "numero_presupuesto": "PRES-20250116-001",
+  "lineas": [
+    {
+      "producto_id": "CUA002",
+      "cantidad": 2
+    },
+    {
+      "producto_id": "BOL002",
+      "cantidad": 10
+    },
+    {
+      "producto_id": "MAR002",
+      "cantidad": 1
+    }
+  ]
+}

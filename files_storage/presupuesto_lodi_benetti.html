@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presupuesto - Lodi Benetti</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        .button-container {
+            background: #f8f9fa;
+            padding: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-pdf {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-pdf:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-print {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-print:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(40, 167, 69, 0.4);
+        }
+        
+        #presupuesto {
+            padding: 40px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 40px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+        }
+        
+        .logo-section h1 {
+            color: #667eea;
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        
+        .logo-section p {
+            color: #666;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        .presupuesto-info {
+            text-align: right;
+        }
+        
+        .presupuesto-info h2 {
+            color: #667eea;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        .presupuesto-info p {
+            color: #666;
+            font-size: 13px;
+            margin: 3px 0;
+        }
+        
+        .cliente-section {
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .cliente-section h3 {
+            color: #333;
+            font-size: 14px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .cliente-section p {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 14px;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .cantidad, .precio, .descuento, .total, .ahorro {
+            text-align: right;
+        }
+        
+        .resumen {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .resumen-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+        
+        .resumen-row.total {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+            border-top: 2px solid #ddd;
+            padding-top: 12px;
+            margin-top: 12px;
+        }
+        
+        .resumen-label {
+            color: #666;
+        }
+        
+        .resumen-valor {
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .notas {
+            background: #e7f3ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        
+        .notas h4 {
+            color: #667eea;
+            font-size: 13px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        
+        .notas ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .notas li {
+            color: #555;
+            font-size: 13px;
+            margin-bottom: 5px;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .notas li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .firma {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            padding-top: 40px;
+            border-top: 1px solid #ddd;
+        }
+        
+        .firma-campo {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .firma-linea {
+            border-top: 1px solid #333;
+            margin-top: 30px;
+            padding-top: 5px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .button-container {
+                display: none;
+            }
+            .container {
+                box-shadow: none;
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="button-container">
+            <button class="btn btn-pdf" onclick="descargarPDF()">📥 Descargar PDF</button>
+            <button class="btn btn-print" onclick="window.print()">🖨️ Imprimir</button>
+        </div>
+        
+        <div id="presupuesto">
+            <!-- ENCABEZADO -->
+            <div class="header">
+                <div class="logo-section">
+                    <h1>📚 LIBRERÍA EXPRESS</h1>
+                    <p>Calle Principal 123, Local 5<br>
+                    Teléfono: (123) 456-7890<br>
+                    Email: contacto@libreríaexpress.com</p>
+                </div>
+                <div class="presupuesto-info">
+                    <h2>PRESUPUESTO</h2>
+                    <p><strong>Número:</strong> PRES-2024-001</p>
+                    <p><strong>Fecha:</strong> <span id="fecha"></span></p>
+                    <p><strong>Vigencia:</strong> 30 días</p>
+                </div>
+            </div>
+            
+            <!-- CLIENTE -->
+            <div class="cliente-section">
+                <h3>📋 Información del Cliente</h3>
+                <p><strong>Nombre:</strong> Lodi Benetti</p>
+                <p><strong>Tipo:</strong> Cliente Mayorista</p>
+                <p><strong>Contacto:</strong> A confirmar</p>
+            </div>
+            
+            <!-- TABLA DE PRODUCTOS -->
+            <table>
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th class="cantidad">Cantidad</th>
+                        <th class="precio">Precio Unit.</th>
+                        <th class="descuento">Descuento</th>
+                        <th class="total">Subtotal</th>
+                        <th class="ahorro">Ahorro</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Bolígrafo Gel Premium (BOL003)</td>
+                        <td class="cantidad">40</td>
+                        <td class="precio">$1.20</td>
+                        <td class="descuento">12%</td>
+                        <td class="total">$42.40</td>
+                        <td class="ahorro">$5.80</td>
+                    </tr>
+                    <tr>
+                        <td>Cuaderno Cuadriculado A4 (CUA002)</td>
+                        <td class="cantidad">20</td>
+                        <td class="precio">$2.00</td>
+                        <td class="descuento">0%</td>
+                        <td class="total">$40.00</td>
+                        <td class="ahorro">$0.00</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <!-- RESUMEN FINANCIERO -->
+            <div class="resumen">
+                <div class="resumen-row">
+                    <span class="resumen-label">Subtotal (sin descuentos):</span>
+                    <span class="resumen-valor">$88.00</span>
+                </div>
+                <div class="resumen-row">
+                    <span class="resumen-label">Total descuentos aplicados:</span>
+                    <span class="resumen-valor">-$5.80</span>
+                </div>
+                <div class="resumen-row total">
+                    <span class="resumen-label">TOTAL FINAL:</span>
+                    <span class="resumen-valor">$82.20</span>
+                </div>
+            </div>
+            
+            <!-- NOTAS -->
+            <div class="notas">
+                <h4>📝 Notas Importantes</h4>
+                <ul>
+                    <li>Bolígrafos Gel Premium: descuento 12% activado por cantidad (40 unidades)</li>
+                    <li>Cuadernos: aún no alcanza el tramo mínimo de descuento (requiere 30 unidades)</li>
+                    <li>Descuento promedio: 6.59%</li>
+                    <li>Presupuesto válido por 30 días desde la fecha indicada</li>
+                    <li>Incluye impuestos locales según legislación vigente</li>
+                </ul>
+            </div>
+            
+            <!-- FIRMA -->
+            <div class="firma">
+                <div class="firma-campo">
+                    <div class="firma-linea">Autorizado por<br>Gerencia</div>
+                </div>
+                <div class="firma-campo">
+                    <div class="firma-linea">Fecha y Sello<br>de Empresa</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Establecer fecha actual
+        document.getElementById('fecha').textContent = new Date().toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        
+        function descargarPDF() {
+            const elemento = document.getElementById('presupuesto');
+            const opt = {
+                margin: 10,
+                filename: 'Presupuesto_Lodi_Benetti.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+            };
+            html2pdf().set(opt).from(elemento).save();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "cliente": "Rossi",
+  "lineas": [
+    {"producto_id": "MAR002", "cantidad": 50},
+    {"producto_id": "CUA002", "cantidad": 10}
+  ]
+}

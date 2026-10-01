@@ -1,0 +1,150 @@
+{
+  "categorias": {
+    "cuadernos": {
+      "nombre": "Cuadernos",
+      "productos": [
+        {
+          "id": "CUA001",
+          "nombre": "Cuaderno Rayado A4 100 Hojas",
+          "precio_unitario": 2.50,
+          "descuentos": [
+            {"cantidad_minima": 10, "cantidad_maxima": 24, "descuento_porcentaje": 5},
+            {"cantidad_minima": 25, "cantidad_maxima": 49, "descuento_porcentaje": 10},
+            {"cantidad_minima": 50, "cantidad_maxima": 99, "descuento_porcentaje": 15},
+            {"cantidad_minima": 100, "cantidad_maxima": null, "descuento_porcentaje": 20}
+          ]
+        },
+        {
+          "id": "CUA002",
+          "nombre": "Cuaderno Cuadriculado A4 80 Hojas",
+          "precio_unitario": 2.00,
+          "descuentos": [
+            {"cantidad_minima": 15, "cantidad_maxima": 29, "descuento_porcentaje": 5},
+            {"cantidad_minima": 30, "cantidad_maxima": 59, "descuento_porcentaje": 12},
+            {"cantidad_minima": 60, "cantidad_maxima": null, "descuento_porcentaje": 18}
+          ]
+        },
+        {
+          "id": "CUA003",
+          "nombre": "Cuaderno Espiral A4 200 Hojas",
+          "precio_unitario": 4.00,
+          "descuentos": [
+            {"cantidad_minima": 8, "cantidad_maxima": 19, "descuento_porcentaje": 8},
+            {"cantidad_minima": 20, "cantidad_maxima": 39, "descuento_porcentaje": 15},
+            {"cantidad_minima": 40, "cantidad_maxima": null, "descuento_porcentaje": 22}
+          ]
+        }
+      ]
+    },
+    "bolígrafos": {
+      "nombre": "Bolígrafos",
+      "productos": [
+        {
+          "id": "BOL001",
+          "nombre": "Bolígrafo Azul (caja x 50)",
+          "precio_unitario": 5.00,
+          "descuentos": [
+            {"cantidad_minima": 5, "cantidad_maxima": 9, "descuento_porcentaje": 5},
+            {"cantidad_minima": 10, "cantidad_maxima": 24, "descuento_porcentaje": 10},
+            {"cantidad_minima": 25, "cantidad_maxima": null, "descuento_porcentaje": 15}
+          ]
+        },
+        {
+          "id": "BOL002",
+          "nombre": "Bolígrafo Rojo (caja x 50)",
+          "precio_unitario": 5.00,
+          "descuentos": [
+            {"cantidad_minima": 5, "cantidad_maxima": 9, "descuento_porcentaje": 5},
+            {"cantidad_minima": 10, "cantidad_maxima": 24, "descuento_porcentaje": 10},
+            {"cantidad_minima": 25, "cantidad_maxima": null, "descuento_porcentaje": 15}
+          ]
+        },
+        {
+          "id": "BOL003",
+          "nombre": "Bolígrafo Gel Premium",
+          "precio_unitario": 1.20,
+          "descuentos": [
+            {"cantidad_minima": 20, "cantidad_maxima": 49, "descuento_porcentaje": 8},
+            {"cantidad_minima": 50, "cantidad_maxima": 99, "descuento_porcentaje": 12},
+            {"cantidad_minima": 100, "cantidad_maxima": null, "descuento_porcentaje": 18}
+          ]
+        }
+      ]
+    },
+    "marcadores": {
+      "nombre": "Marcadores y Rotuladores",
+      "productos": [
+        {
+          "id": "MAR001",
+          "nombre": "Marcador Fluorescente (caja x 6)",
+          "precio_unitario": 3.50,
+          "descuentos": [
+            {"cantidad_minima": 10, "cantidad_maxima": 24, "descuento_porcentaje": 7},
+            {"cantidad_minima": 25, "cantidad_maxima": 49, "descuento_porcentaje": 12},
+            {"cantidad_minima": 50, "cantidad_maxima": null, "descuento_porcentaje": 18}
+          ]
+        },
+        {
+          "id": "MAR002",
+          "nombre": "Rotulador Permanente (caja x 12)",
+          "precio_unitario": 6.00,
+          "descuentos": [
+            {"cantidad_minima": 5, "cantidad_maxima": 14, "descuento_porcentaje": 8},
+            {"cantidad_minima": 15, "cantidad_maxima": 29, "descuento_porcentaje": 14},
+            {"cantidad_minima": 30, "cantidad_maxima": null, "descuento_porcentaje": 20}
+          ]
+        }
+      ]
+    },
+    "papel": {
+      "nombre": "Papel y Cartulina",
+      "productos": [
+        {
+          "id": "PAP001",
+          "nombre": "Resma Papel A4 80 Grs (500 hojas)",
+          "precio_unitario": 4.50,
+          "descuentos": [
+            {"cantidad_minima": 5, "cantidad_maxima": 9, "descuento_porcentaje": 5},
+            {"cantidad_minima": 10, "cantidad_maxima": 24, "descuento_porcentaje": 10},
+            {"cantidad_minima": 25, "cantidad_maxima": null, "descuento_porcentaje": 15}
+          ]
+        },
+        {
+          "id": "PAP002",
+          "nombre": "Cartulina A4 (paquete x 100)",
+          "precio_unitario": 7.00,
+          "descuentos": [
+            {"cantidad_minima": 5, "cantidad_maxima": 14, "descuento_porcentaje": 8},
+            {"cantidad_minima": 15, "cantidad_maxima": 29, "descuento_porcentaje": 12},
+            {"cantidad_minima": 30, "cantidad_maxima": null, "descuento_porcentaje": 18}
+          ]
+        }
+      ]
+    },
+    "adhesivos": {
+      "nombre": "Adhesivos y Pegamentos",
+      "productos": [
+        {
+          "id": "ADH001",
+          "nombre": "Cinta Adhesiva Transparente (rollo 50mm)",
+          "precio_unitario": 1.50,
+          "descuentos": [
+            {"cantidad_minima": 20, "cantidad_maxima": 49, "descuento_porcentaje": 6},
+            {"cantidad_minima": 50, "cantidad_maxima": 99, "descuento_porcentaje": 12},
+            {"cantidad_minima": 100, "cantidad_maxima": null, "descuento_porcentaje": 18}
+          ]
+        },
+        {
+          "id": "ADH002",
+          "nombre": "Pegamento Blanco (tubo 40ml)",
+          "precio_unitario": 1.00,
+          "descuentos": [
+            {"cantidad_minima": 30, "cantidad_maxima": 59, "descuento_porcentaje": 8},
+            {"cantidad_minima": 60, "cantidad_maxima": 99, "descuento_porcentaje": 14},
+            {"cantidad_minima": 100, "cantidad_maxima": null, "descuento_porcentaje": 20}
+          ]
+        }
+      ]
+    }
+  }
+}

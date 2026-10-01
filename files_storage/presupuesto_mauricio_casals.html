@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presupuesto - Mauricio Casals</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        .button-container {
+            max-width: 900px;
+            margin: 0 auto 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-pdf {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .btn-pdf:hover {
+            background-color: #c0392b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+        }
+        .btn-print {
+            background-color: #3498db;
+            color: white;
+        }
+        .btn-print:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 40px;
+            border-bottom: 3px solid #2c3e50;
+            padding-bottom: 20px;
+        }
+        .company-info h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        .company-info p {
+            color: #7f8c8d;
+            font-size: 13px;
+        }
+        .document-title {
+            text-align: right;
+        }
+        .document-title h2 {
+            color: #e74c3c;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        .document-title p {
+            color: #7f8c8d;
+            font-size: 12px;
+        }
+        .customer-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+            padding: 20px;
+            background-color: #ecf0f1;
+            border-radius: 6px;
+        }
+        .customer-info div {
+            font-size: 13px;
+        }
+        .customer-info label {
+            font-weight: bold;
+            color: #2c3e50;
+            display: block;
+            margin-bottom: 3px;
+        }
+        .customer-info span {
+            color: #34495e;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        table thead {
+            background-color: #2c3e50;
+            color: white;
+        }
+        table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #ecf0f1;
+            font-size: 13px;
+        }
+        table tbody tr:hover {
+            background-color: #f9f9f9;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .price {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .discount {
+            color: #27ae60;
+            font-weight: 600;
+        }
+        .summary {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 30px;
+        }
+        .summary-box {
+            width: 350px;
+            background-color: #ecf0f1;
+            padding: 20px;
+            border-radius: 6px;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 13px;
+        }
+        .summary-row label {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .summary-row.total {
+            border-top: 2px solid #2c3e50;
+            padding-top: 12px;
+            margin-top: 12px;
+            font-size: 16px;
+        }
+        .summary-row.total label {
+            color: #e74c3c;
+            font-size: 16px;
+        }
+        .summary-row.total span {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ecf0f1;
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 12px;
+        }
+        .notes {
+            background-color: #fffacd;
+            padding: 15px;
+            border-left: 4px solid #f39c12;
+            margin-bottom: 20px;
+            font-size: 12px;
+            color: #2c3e50;
+        }
+        .notes strong {
+            display: block;
+            margin-bottom: 5px;
+            color: #f39c12;
+        }
+        @media print {
+            body {
+                padding: 0;
+                background-color: white;
+            }
+            .button-container {
+                display: none;
+            }
+            .container {
+                box-shadow: none;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- BOTONES DE ACCIÓN -->
+    <div class="button-container">
+        <button class="btn btn-pdf" onclick="descargarPDF()">
+            📥 Descargar PDF
+        </button>
+        <button class="btn btn-print" onclick="window.print()">
+            🖨️ Imprimir
+        </button>
+    </div>
+
+    <!-- CONTENIDO DEL PRESUPUESTO -->
+    <div id="presupuesto" class="container">
+        <!-- ENCABEZADO -->
+        <div class="header">
+            <div class="company-info">
+                <h1>📚 LIBRERÍA PREMIUM</h1>
+                <p>Sistema de Automatización de Presupuestos</p>
+            </div>
+            <div class="document-title">
+                <h2>PRESUPUESTO</h2>
+                <p>Generado: <strong>2024</strong></p>
+            </div>
+        </div>
+
+        <!-- INFORMACIÓN DEL CLIENTE -->
+        <div class="customer-info">
+            <div>
+                <label>CLIENTE:</label>
+                <span>Mauricio Casals</span>
+            </div>
+            <div>
+                <label>CORREO:</label>
+                <span>contacto@mauriciocasals.com</span>
+            </div>
+        </div>
+
+        <!-- TABLA DE PRODUCTOS -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th class="text-center">Cantidad</th>
+                    <th class="text-right">Precio Unit.</th>
+                    <th class="text-center">Descuento</th>
+                    <th class="text-right">Precio Final</th>
+                    <th class="text-right">Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Cuaderno Cuadriculado A4 80 Hojas (CUA002)</td>
+                    <td class="text-center">2</td>
+                    <td class="text-right price">$2.00</td>
+                    <td class="text-center">0%</td>
+                    <td class="text-right price">$2.00</td>
+                    <td class="text-right price">$4.00</td>
+                </tr>
+                <tr>
+                    <td>Bolígrafo Rojo (caja x 50) (BOL002)</td>
+                    <td class="text-center">10</td>
+                    <td class="text-right price">$5.00</td>
+                    <td class="text-center discount">10%</td>
+                    <td class="text-right price">$4.50</td>
+                    <td class="text-right price">$45.00</td>
+                </tr>
+                <tr>
+                    <td>Rotulador Permanente (caja x 12) (MAR002)</td>
+                    <td class="text-center">1</td>
+                    <td class="text-right price">$6.00</td>
+                    <td class="text-center">0%</td>
+                    <td class="text-right price">$6.00</td>
+                    <td class="text-right price">$6.00</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- RESUMEN DE COSTOS -->
+        <div class="summary">
+            <div class="summary-box">
+                <div class="summary-row">
+                    <label>Subtotal:</label>
+                    <span>$55.00</span>
+                </div>
+                <div class="summary-row">
+                    <label>Descuentos Aplicados:</label>
+                    <span class="discount">-$5.00</span>
+                </div>
+                <div class="summary-row">
+                    <label>Impuestos (0%):</label>
+                    <span>$0.00</span>
+                </div>
+                <div class="summary-row total">
+                    <label>TOTAL:</label>
+                    <span>$51.00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- NOTAS IMPORTANTES -->
+        <div class="notes">
+            <strong>⚠️ Notas Importantes:</strong>
+            ✓ Descuento de 10% aplicado en Bolígrafos Rojos (cantidad ≥ 10)<br>
+            ✓ Válido por 30 días desde la emisión<br>
+            ✓ Pago contra entrega o transferencia bancaria<br>
+            ✓ Envío incluido para pedidos mayores a $100
+        </div>
+
+        <!-- PIE DE PÁGINA -->
+        <div class="footer">
+            <p><strong>Presupuesto Válido - Documento Exportable a PDF</strong></p>
+            <p>Para más información o confirmar este presupuesto, contáctanos.</p>
+            <p style="margin-top: 10px; color: #95a5a6;">© 2024 Librería Premium - Todos los derechos reservados</p>
+        </div>
+    </div>
+
+    <script>
+        function descargarPDF() {
+            const element = document.getElementById('presupuesto');
+            const opt = {
+                margin: 10,
+                filename: 'Presupuesto_Mauricio_Casals.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+
+        window.addEventListener('load', function() {
+            console.log('✅ Presupuesto listo. Usa el botón "Descargar PDF" o Ctrl+P para exportar.');
+        });
+    </script>
+</body>
+</html>
