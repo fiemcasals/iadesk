@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'app',
+    'login',
 ]
 
 MIDDLEWARE = [
@@ -128,3 +129,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 STORAGE_DIR = BASE_DIR / 'files_storage'
 CLAUDE_MD_PATH = BASE_DIR / 'claude.md'
+
+# Rutas de autenticación
+LOGIN_URL = 'login'              # A dónde enviar si no está autenticado
+LOGIN_REDIRECT_URL = '/app/'     # A dónde redirigir luego de iniciar sesión con éxito
+LOGOUT_REDIRECT_URL = '/'        # A dónde redirigir tras cerrar sesión

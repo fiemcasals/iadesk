@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clase 8: Skills de IA, Router Jerárquico, SQL y Memoria Adaptativa</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0b0f19;
+            --bg-card: rgba(30, 41, 59, 0.75);
+            --border-card: rgba(148, 163, 184, 0.15);
+            --accent-cyan: #38bdf8;
+            --accent-blue: #3b82f6;
+            --accent-emerald: #10b981;
+            --accent-purple: #a855f7;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(168, 85, 247, 0.08) 0%, transparent 40%);
+            color: var(--text-main);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Progress Bar */
+        .progress-bar-container {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.08);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 100;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 10%;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+            transition: width 0.3s ease;
+        }
+
+        /* Top Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 36px;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-card);
+            z-index: 10;
+        }
+
+        .header-title {
+            font-size: 1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--accent-cyan);
+            letter-spacing: 0.5px;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .badge-pill {
+            background: rgba(56, 189, 248, 0.12);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            font-family: 'Fira Code', monospace;
+        }
+
+        .btn-icon {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-card);
+            color: var(--text-main);
+            padding: 6px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-icon:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--accent-cyan);
+            transform: translateY(-1px);
+        }
+
+        /* Main Presentation Canvas */
+        main.deck-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 40px;
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            width: min(1200px, 94vw);
+            height: min(720px, 82vh);
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 16px;
+            backdrop-filter: blur(16px);
+            padding: 40px 48px;
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.95) translateY(20px);
+            transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1) translateY(0);
+            z-index: 5;
+        }
+
+        /* Slide Components */
+        .slide-header {
+            margin-bottom: 20px;
+        }
+
+        .slide-tag {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            margin-bottom: 6px;
+            display: inline-block;
+        }
+
+        .slide-title {
+            font-size: 2rem;
+            font-weight: 800;
+            line-height: 1.2;
+            background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .slide-subtitle {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        .slide-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        /* Grid Layouts */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            align-items: stretch;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+            align-items: stretch;
+        }
+
+        /* Cards */
+        .card {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.25s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            border-color: rgba(56, 189, 248, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .card-icon {
+            font-size: 1.6rem;
+        }
+
+        .card-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .card-desc {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            flex: 1;
+        }
+
+        .card-badge {
+            align-self: flex-start;
+            margin-top: 12px;
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            font-weight: 600;
+        }
+
+        /* Code Blocks */
+        .code-container {
+            background: #060911;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.82rem;
+            position: relative;
+        }
+
+        .code-header {
+            background: rgba(255, 255, 255, 0.04);
+            padding: 8px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .code-lang {
+            color: var(--accent-cyan);
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .copy-btn:hover {
+            color: #fff;
+        }
+
+        pre {
+            padding: 14px;
+            overflow-x: auto;
+            color: #e2e8f0;
+            line-height: 1.5;
+            max-height: 380px;
+        }
+
+        /* Simulator Interactive Styles */
+        .sim-container {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            gap: 20px;
+            height: 100%;
+        }
+
+        .sim-box {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid var(--border-card);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .sim-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        .sim-input:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+        }
+
+        .sim-btn {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            color: #000;
+            font-weight: 700;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sim-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .sim-output {
+            flex: 1;
+            background: #060911;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 14px;
+            overflow-y: auto;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.82rem;
+            color: #38bdf8;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        /* Navigation Footer */
+        footer {
+            padding: 14px 36px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid var(--border-card);
+            z-index: 10;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border-card);
+            color: #fff;
+            padding: 8px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background: var(--accent-cyan);
+            color: #000;
+            border-color: var(--accent-cyan);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* Tabbed code viewer */
+        .tab-buttons {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .tab-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .tab-btn.active {
+            background: rgba(56, 189, 248, 0.2);
+            color: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="progress-bar-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <header>
+        <div class="header-title">
+            <span>🧠</span>
+            <span>Clase 8: Skills, Router Jerárquico, SQL y Memoria</span>
+        </div>
+        <div class="header-controls">
+            <span class="badge-pill" id="slideCounter">1 / 9</span>
+            <button class="btn-icon" id="fullscreenBtn">⛶ Pantalla Completa</button>
+        </div>
+    </header>
+
+    <main class="deck-container">
+
+        <!-- SLIDE 1: Portada -->
+        <section class="slide active" data-slide="1">
+            <div class="slide-header">
+                <span class="slide-tag">Arquitectura Avanzada de Agentes</span>
+                <h1 class="slide-title">Skills Especializadas, Router Jerárquico y Consultas SQL</h1>
+                <p class="slide-subtitle">Construcción de un Asesor Comercial Inteligente con Memoria Adaptativa y Persistencia de Permisos</p>
+            </div>
+            <div class="slide-body">
+                <div class="grid-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">🧩</span>
+                            <h3 class="card-title">Arquitectura de Skills</h3>
+                        </div>
+                        <p class="card-desc">Superamos el Prompt monolítico encapsulando lógica de activación, validaciones y herramientas en módulos independientes y testeables.</p>
+                        <span class="card-badge" style="color: var(--accent-cyan);">Modular & Escalable</span>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">🗂️</span>
+                            <h3 class="card-title">Router Jerárquico</h3>
+                        </div>
+                        <p class="card-desc">Navegación inteligente por índices Markdown (Raíz ➔ Librería ➔ Indumentaria ➔ Carnicería) reduciendo drásticamente el consumo de tokens.</p>
+                        <span class="card-badge" style="color: var(--accent-emerald);">Ahorro de Contexto</span>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">📊</span>
+                            <h3 class="card-title">SQL Tooling & Mirroring</h3>
+                        </div>
+                        <p class="card-desc">Consultas exactas de 'producto más barato' con SQL ordenado, adaptación al tono del cliente y memoria que no repregunta acuerdos.</p>
+                        <span class="card-badge" style="color: var(--accent-purple);">Precisión & Empatía</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 2: El Desafío: Monolito vs Skills -->
+        <section class="slide" data-slide="2">
+            <div class="slide-header">
+                <span class="slide-tag">Conceptos Fundamentales</span>
+                <h1 class="slide-title">El Problema del Prompt Monolítico</h1>
+                <p class="slide-subtitle">Por qué los agentes complejos necesitan Skills desacopladas y autónomas</p>
+            </div>
+            <div class="slide-body">
+                <div class="grid-2">
+                    <div class="card" style="border-color: rgba(244, 63, 94, 0.3);">
+                        <div class="card-header">
+                            <span class="card-icon">❌</span>
+                            <h3 class="card-title" style="color: var(--accent-rose);">Enfoque Monolítico (Ingenuo)</h3>
+                        </div>
+                        <ul style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.8; margin-left: 20px;">
+                            <li>Un System Prompt de miles de líneas con todas las reglas de negocio.</li>
+                            <li>Todos los archivos y catálogos cargados al contexto a la vez.</li>
+                            <li>Degradación de atención: el modelo confunde reglas y pierde precisión.</li>
+                            <li>Costos altos de API y lentitud en cada interacción.</li>
+                        </ul>
+                    </div>
+                    <div class="card" style="border-color: rgba(16, 185, 129, 0.3);">
+                        <div class="card-header">
+                            <span class="card-icon">✅</span>
+                            <h3 class="card-title" style="color: var(--accent-emerald);">Enfoque Basado en Skills</h3>
+                        </div>
+                        <ul style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.8; margin-left: 20px;">
+                            <li><strong>Matcher:</strong> Detecta si el prompt activa la habilidad (ej: consulta de precios).</li>
+                            <li><strong>Executor:</strong> Ejecuta la herramienta especializada (SQL, Router, Memoria).</li>
+                            <li><strong>Aislamiento:</strong> Cada skill es testeable en Python de forma aislada.</li>
+                            <li><strong>Composición:</strong> El Agente orquesta las habilidades que necesita.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 3: Router Jerárquico de Documentos -->
+        <section class="slide" data-slide="3">
+            <div class="slide-header">
+                <span class="slide-tag">Navegación Semántica</span>
+                <h1 class="slide-title">Router Jerárquico de Carpetas e Índices</h1>
+                <p class="slide-subtitle">Búsqueda multinivel sin sobrecargar la ventana de contexto</p>
+            </div>
+            <div class="slide-body">
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">🌳</span>
+                            <h3 class="card-title">Estructura Multinivel</h3>
+                        </div>
+                        <div class="code-container">
+                            <div class="code-header">
+                                <span class="code-lang">JERARQUÍA DE CARPETAS</span>
+                            </div>
+                            <pre>sample_storage/
+├── INDEX.md          # Router Maestro
+├── MEMORY.md         # Memoria Global
+├── libreria/
+│   ├── INDEX.md      # Cuadernos, lápices, resmas
+│   └── MEMORY.md
+├── indumentaria/
+│   └── INDEX.md      # Remeras, pantalones
+└── carniceria/
+    └── INDEX.md      # Pollo, asado, milanesas</pre>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">⚡</span>
+                            <h3 class="card-title">Flujo del Router</h3>
+                        </div>
+                        <p class="card-desc">
+                            1. Llega prompt: <em>"cuál es el cuaderno más barato"</em>.<br><br>
+                            2. El <code>RouterJerarquicoSkill</code> analiza el <code>INDEX.md</code> raíz y mapea <code>cuaderno</code> ➔ <code>libreria/</code>.<br><br>
+                            3. Abre bajo demanda <code>libreria/INDEX.md</code> descartando indumentaria y carnicería.<br><br>
+                            4. Se ahorra hasta un <strong>80% de tokens</strong> en catálogos empresariales extensos.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 4: Base de Datos & Consultas SQL -->
+        <section class="slide" data-slide="4">
+            <div class="slide-header">
+                <span class="slide-tag">Tool Calling & Persistencia</span>
+                <h1 class="slide-title">Consultas SQL y Cálculo de Óptimos</h1>
+                <p class="slide-subtitle">Cómo evitar alucinaciones numéricas delegando en motores relacionales</p>
+            </div>
+            <div class="slide-body">
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">📐</span>
+                            <h3 class="card-title">1. Introspección (PRAGMA/DESCRIBE)</h3>
+                        </div>
+                        <div class="code-container">
+                            <div class="code-header"><span class="code-lang">SQL ESQUEMA</span></div>
+                            <pre>-- La IA consulta el esquema de la tabla:
+PRAGMA table_info(insumos);
+
+/* Columnas reconocidas:
+   id, nombre, descripcion, precio, stock, 
+   categoria_id, palabras_relacionadas */</pre>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">🎯</span>
+                            <h3 class="card-title">2. Sentencia SQL de Optimización</h3>
+                        </div>
+                        <div class="code-container">
+                            <div class="code-header"><span class="code-lang">SQL OPTIMIZADO</span></div>
+                            <pre>-- Consulta para 'el cuaderno más barato':
+SELECT * FROM insumos 
+WHERE (LOWER(nombre) LIKE '%cuaderno%' 
+   OR LOWER(palabras_relacionadas) LIKE '%cuaderno%')
+ORDER BY precio ASC 
+LIMIT 1;
+
+-- Resultado exacto:
+-- "Cuaderno económico tapa blanda" | $95 | Stock: 250</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 5: Memoria Adaptativa, Mirroring & Permisos -->
+        <section class="slide" data-slide="5">
+            <div class="slide-header">
+                <span class="slide-tag">Psicología de la Venta & UX</span>
+                <h1 class="slide-title">Memoria Adaptativa, Mirroring y Permisos</h1>
+                <p class="slide-subtitle">Adaptación al vocabulario del usuario y respeto irrestricto a los acuerdos</p>
+            </div>
+            <div class="slide-body">
+                <div class="grid-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">🗣️</span>
+                            <h3 class="card-title">Mirroring Léxico</h3>
+                        </div>
+                        <p class="card-desc">El agente hace una sumatoria de palabras del usuario: si habla informal responde con calidez ("¡Hola! Mirá, acá tenés..."); si habla formal responde protocolar ("Estimado, le informo...").</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">🔒</span>
+                            <h3 class="card-title">Persistencia de Permisos</h3>
+                        </div>
+                        <p class="card-desc">Si el usuario otorgó permiso de cotización o reserva, la IA lo guarda en <code>MEMORY.md</code>. <strong>Regla de oro:</strong> Nunca volver a preguntar algo ya autorizado.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">✨</span>
+                            <h3 class="card-title">"Respuesta Bonita"</h3>
+                        </div>
+                        <p class="card-desc">Presenta el producto óptimo con estructura limpia: Título destacado, precio claro en ARS, stock garantizado y llamado a la acción comercial persuasivo.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 6: Simulador Interactivo en Vivo -->
+        <section class="slide" data-slide="6">
+            <div class="slide-header">
+                <span class="slide-tag">Laboratorio en Vivo</span>
+                <h1 class="slide-title">Simulador Interactivo del Asesor y Router</h1>
+                <p class="slide-subtitle">Prueba en tiempo real la activación de Skills, el ruteo, la consulta SQL y la respuesta comercial</p>
+            </div>
+            <div class="slide-body">
+                <div class="sim-container">
+                    <div class="sim-box">
+                        <label style="font-size: 0.85rem; font-weight: 600; color: var(--accent-cyan);">1. Ingresa tu consulta o prompt:</label>
+                        <input type="text" id="simPromptInput" class="sim-input" value="Hola che, quiero saber cuál es el cuaderno más barato en stock" placeholder="Escribe aquí tu consulta...">
+                        
+                        <div style="display: flex; gap: 8px;">
+                            <button class="sim-btn" onclick="runSimulation('cuaderno')">📒 Test Cuaderno Barato</button>
+                            <button class="sim-btn" style="background: rgba(255,255,255,0.1); color: #fff;" onclick="runSimulation('remera')">👕 Test Indumentaria</button>
+                            <button class="sim-btn" style="background: rgba(255,255,255,0.1); color: #fff;" onclick="runSimulation('asado')">🥩 Test Carnicería</button>
+                        </div>
+
+                        <div style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; margin-top: 6px;">
+                            💡 Observa cómo se adaptan el módulo identificado, la sentencia SQL generada y el tono de respuesta.
+                        </div>
+                    </div>
+
+                    <div class="sim-box">
+                        <label style="font-size: 0.85rem; font-weight: 600; color: var(--accent-emerald);">2. Pipeline de Ejecución de Skills:</label>
+                        <div class="sim-output" id="simOutputConsole">// Haz clic en un botón o presiona Enter para simular...</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 7: Visor de Código de la Clase -->
+        <section class="slide" data-slide="7">
+            <div class="slide-header">
+                <span class="slide-tag">Código Fuente</span>
+                <h1 class="slide-title">Explorador de Archivos y Módulos de la Clase</h1>
+                <p class="slide-subtitle">Código completo listo para usar en <code>clase8/10-skill/</code></p>
+            </div>
+            <div class="slide-body">
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="switchTab('tabSkills')">🧠 skills_engine.py</button>
+                    <button class="tab-btn" onclick="switchTab('tabDb')">🗄️ catalogo_db.py</button>
+                    <button class="tab-btn" onclick="switchTab('tabIndex')">🗂️ sample_storage/INDEX.md</button>
+                    <button class="tab-btn" onclick="switchTab('tabMemory')">🧠 sample_storage/MEMORY.md</button>
+                </div>
+
+                <div id="tabSkills" class="tab-pane active">
+                    <div class="code-container">
+                        <div class="code-header">
+                            <span class="code-lang">PYTHON (skills_engine.py)</span>
+                            <button class="copy-btn" onclick="copyCode('codeSkills')">📋 Copiar Código</button>
+                        </div>
+                        <pre id="codeSkills">class RouterJerarquicoSkill(BaseSkill):
+    def route_query(self, query: str) -> dict:
+        # 1. Lee INDEX.md raíz y mapea la categoría
+        # 2. Carga bajo demanda el índice del módulo específico
+        ...
+
+class CatalogoSQLSkill(BaseSkill):
+    def execute(self, prompt: str, context: dict) -> dict:
+        # Genera y ejecuta: SELECT * FROM insumos ORDER BY precio ASC LIMIT 1
+        ...
+
+class AsesorVentasSkill(BaseSkill):
+    def execute(self, prompt: str, context: dict) -> dict:
+        # Analiza tono (Mirroring), verifica permisos en MEMORY.md y formula respuesta bonita
+        ...</pre>
+                    </div>
+                </div>
+
+                <div id="tabDb" class="tab-pane">
+                    <div class="code-container">
+                        <div class="code-header">
+                            <span class="code-lang">PYTHON (catalogo_db.py)</span>
+                            <button class="copy-btn" onclick="copyCode('codeDb')">📋 Copiar Código</button>
+                        </div>
+                        <pre id="codeDb">def find_cheapest_product(keyword: str, categoria: str = None) -> dict:
+    query = """
+    SELECT i.id, i.nombre, i.descripcion, i.precio, i.stock, c.nombre AS categoria
+    FROM insumos i
+    LEFT JOIN categorias c ON i.categoria_id = c.id
+    WHERE (LOWER(i.nombre) LIKE ? OR LOWER(i.palabras_relacionadas) LIKE ?)
+    ORDER BY i.precio ASC LIMIT 1
+    """
+    ...</pre>
+                    </div>
+                </div>
+
+                <div id="tabIndex" class="tab-pane">
+                    <div class="code-container">
+                        <div class="code-header">
+                            <span class="code-lang">MARKDOWN (sample_storage/INDEX.md)</span>
+                            <button class="copy-btn" onclick="copyCode('codeIndex')">📋 Copiar Markdown</button>
+                        </div>
+                        <pre id="codeIndex"># 🗂️ Índice Maestro General (INDEX.md)
+| Carpeta / Módulo | Temas y Palabras Clave | Resumen del Contenido |
+| :--- | :--- | :--- |
+| `libreria/` | `cuaderno`, `lapiz`, `resma`, `hojas` | Precios y stock de artículos de librería |
+| `indumentaria/` | `remera`, `pantalon`, `buzo`, `ropa` | Precios y stock de indumentaria comercial |
+| `carniceria/` | `carne`, `pollo`, `pescado`, `asado` | Precios por kilo de cortes cárnicos |</pre>
+                    </div>
+                </div>
+
+                <div id="tabMemory" class="tab-pane">
+                    <div class="code-container">
+                        <div class="code-header">
+                            <span class="code-lang">MARKDOWN (sample_storage/MEMORY.md)</span>
+                            <button class="copy-btn" onclick="copyCode('codeMemory')">📋 Copiar Markdown</button>
+                        </div>
+                        <pre id="codeMemory"># 🧠 Memoria de Comportamiento del Agente
+- Rol: Asesor de ventas experto y empático.
+- Mirroring: Espejar el estilo léxico del usuario (formal/informal).
+- Permisos Activos:
+  * permiso: cotizacion_directa
+  * permiso: confirmacion_sin_repreguntar
+  * regla: NO volver a preguntar lo que ya fue acordado.</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 8: Guión de Pruebas Prácticas -->
+        <section class="slide" data-slide="8">
+            <div class="slide-header">
+                <span class="slide-tag">Taller Práctico</span>
+                <h1 class="slide-title">Guión de Pruebas de la Clase</h1>
+                <p class="slide-subtitle">Ejercicios guiados para validar las Skills en clase</p>
+            </div>
+            <div class="slide-body">
+                <div class="grid-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">1️⃣</span>
+                            <h3 class="card-title">Prueba de Búsqueda Óptima</h3>
+                        </div>
+                        <p class="card-desc">Enviar el prompt: <em>"Quiero saber cuál es el cuaderno más barato"</em>. Verificar que el agente ejecuta la consulta SQL ordenada y devuelve el cuaderno escolar de $95.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">2️⃣</span>
+                            <h3 class="card-title">Prueba de Mirroring</h3>
+                        </div>
+                        <p class="card-desc">Probar un mensaje formal (<em>"Estimado, solicito presupuesto..."</em>) vs informal (<em>"Hola che, qué onda..."</em>). Verificar la adaptación del saludo y cierre comercial.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">3️⃣</span>
+                            <h3 class="card-title">Prueba de Permisos</h3>
+                        </div>
+                        <p class="card-desc">Indicarle una autorización en <code>MEMORY.md</code> (ej: cotización directa) y pedirle un nuevo presupuesto para corroborar que no realiza repreguntas redundantes.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 9: Resumen y Conclusiones -->
+        <section class="slide" data-slide="9">
+            <div class="slide-header">
+                <span class="slide-tag">Cierre de Clase</span>
+                <h1 class="slide-title">Conclusiones y Próximos Pasos</h1>
+                <p class="slide-subtitle">El camino hacia sistemas multiagente autónomos</p>
+            </div>
+            <div class="slide-body">
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-icon">🎓</span>
+                            <h3 class="card-title">Lo que Aprendimos Hoy</h3>
+                        </div>
+                        <ul style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.8; margin-left: 20px;">
+                            <li>Estructurar agentes mediante **Skills desacopladas**.</li>
+                            <li>Ahorrar tokens con un **Router Jerárquico** de índices.</li>
+                            <li>Resolver cálculos de precios con **SQL Tooling** en vez de estimaciones del LLM.</li>
+                            <li>Aplicar **Mirroring** y **Persistencia de Permisos** para una UX conversacional de nivel empresarial.</li>
+                        </ul>
+                    </div>
+                    <div class="card" style="border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.05);">
+                        <div class="card-header">
+                            <span class="card-icon">🚀</span>
+                            <h3 class="card-title" style="color: var(--accent-cyan);">Próxima Clase: Agentes Autónomos</h3>
+                        </div>
+                        <p class="card-desc">
+                            En la próxima sesión conectaremos estas Skills en un pipeline con planificación autónoma (Chain of Thought), subagentes especializados y generación de reportes automáticos en PDF.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <button class="nav-btn" id="prevBtn" onclick="changeSlide(-1)">◀ Anterior</button>
+        <span style="font-size: 0.85rem; color: var(--text-muted);">Usa las flechas ⬅ ➡ del teclado para navegar</span>
+        <button class="nav-btn" id="nextBtn" onclick="changeSlide(1)">Siguiente ▶</button>
+    </footer>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 9;
+
+        function updateSlide() {
+            document.querySelectorAll('.slide').forEach(slide => {
+                slide.classList.remove('active');
+                if (parseInt(slide.getAttribute('data-slide')) === currentSlide) {
+                    slide.classList.add('active');
+                }
+            });
+
+            document.getElementById('slideCounter').textContent = `${currentSlide} / ${totalSlides}`;
+            document.getElementById('progressBar').style.width = `${(currentSlide / totalSlides) * 100}%`;
+
+            document.getElementById('prevBtn').disabled = currentSlide === 1;
+            document.getElementById('nextBtn').disabled = currentSlide === totalSlides;
+        }
+
+        function changeSlide(direction) {
+            currentSlide += direction;
+            if (currentSlide < 1) currentSlide = 1;
+            if (currentSlide > totalSlides) currentSlide = totalSlides;
+            updateSlide();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'Space') {
+                changeSlide(1);
+            } else if (e.key === 'ArrowLeft') {
+                changeSlide(-1);
+            }
+        });
+
+        // Tabs
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function copyCode(elementId) {
+            const text = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(text);
+            alert("¡Código copiado al portapapeles!");
+        }
+
+        // Simulator Logic
+        function runSimulation(type) {
+            const consoleBox = document.getElementById('simOutputConsole');
+            consoleBox.textContent = "⏳ Ejecutando Pipeline de Skills...\n";
+
+            setTimeout(() => {
+                if (type === 'cuaderno') {
+                    consoleBox.textContent = 
+`[1. Matcher] Activado: RouterJerarquicoSkill, CatalogoSQLSkill, AsesorVentasSkill
+[2. Router] Ruteo desde INDEX.md general ➔ Módulo: 'libreria/'
+[3. Introspección SQL] PRAGMA table_info(insumos); -> Columnas [id, nombre, precio, stock]
+[4. SQL Query] SELECT * FROM insumos WHERE nombre LIKE '%cuaderno%' ORDER BY precio ASC LIMIT 1;
+[5. SQL Result] { id: 3, nombre: 'Cuaderno económico tapa blanda', precio: 95.0, stock: 250 }
+[6. Mirroring] Tono detectado: 'informal_cercano' (palabras: 'hola', 'che', 'barato')
+[7. Permisos] 'cotizacion_directa' = ACTIVO en MEMORY.md (No se repregunta)
+
+✨ RESPUESTA BONITA GENERADA:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+¡Qué tal! Acá tenés la mejor opción económica que tenemos:
+
+📌 Cuaderno económico tapa blanda
+• Precio: $95.00
+• Stock Disponible: 250 unidades
+• Detalle: Cuaderno tamaño escolar 48 hojas económico
+
+¿Querés que te prepare el pedido o te aparte algunas unidades?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+                } else if (type === 'remera') {
+                    consoleBox.textContent = 
+`[1. Matcher] Activado: RouterJerarquicoSkill, CatalogoSQLSkill, AsesorVentasSkill
+[2. Router] Ruteo desde INDEX.md general ➔ Módulo: 'indumentaria/'
+[3. SQL Query] SELECT * FROM insumos WHERE nombre LIKE '%remera%' ORDER BY precio ASC LIMIT 1;
+[4. SQL Result] { id: 7, nombre: 'Remera de algodón básica', precio: 1200.0, stock: 80 }
+[5. Mirroring] Tono detectado: 'cordial_neutro'
+
+✨ RESPUESTA BONITA GENERADA:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+¡Mucho gusto! Te comparto la opción más conveniente en indumentaria:
+
+📌 Remera de algodón básica
+• Precio: $1,200.00
+• Stock Disponible: 80 unidades
+• Detalle: Remera manga corta 100% algodón peinado
+
+Si te sirve, podemos avanzar con la preparación del pedido.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+                } else if (type === 'asado') {
+                    consoleBox.textContent = 
+`[1. Matcher] Activado: RouterJerarquicoSkill, CatalogoSQLSkill, AsesorVentasSkill
+[2. Router] Ruteo desde INDEX.md general ➔ Módulo: 'carniceria/'
+[3. SQL Query] SELECT * FROM insumos WHERE nombre LIKE '%asado%' ORDER BY precio ASC LIMIT 1;
+[4. SQL Result] { id: 11, nombre: 'Asado de tira novillito x kg', precio: 1800.0, stock: 40 }
+[5. Mirroring] Tono detectado: 'informal_cercano'
+
+✨ RESPUESTA BONITA GENERADA:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+¡Qué tal! Acá tenés la cotización para el asado:
+
+📌 Asado de tira novillito x kg
+• Precio: $1,800.00 / kg
+• Stock Disponible: 40 Kg
+• Detalle: Corte especial para parrilla de primera calidad
+
+¿Querés que te reservemos los kilos para el fin de semana?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+                }
+            }, 300);
+        }
+
+        // Fullscreen Toggle
+        document.getElementById('fullscreenBtn').addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    alert(`Error al activar pantalla completa: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        updateSlide();
+    </script>
+</body>
+</html>

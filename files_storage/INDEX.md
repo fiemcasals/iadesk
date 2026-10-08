@@ -41,6 +41,8 @@
 
 | `presupuesto_esteban_lopez.json` | `presupuesto, esteban lopez, cuadernos, bolígrafos, JSON` | Presupuesto para Esteban López: 20 cuadernos + 15 bolígrafos | Input para generar presupuesto_esteban_lopez.pdf con generar_presupuesto_pdf.py |
 
+| `presupuesto_cliente_sin_nombre.json` | `presupuesto, cuadernos, bolígrafos, cliente` | Presupuesto: 30 cuadernos baratos + 20 bolígrafos caros | Input para generar presupuesto en PDF |
+
 ## 🏷️ Reglas de Mantenimiento para la IA:
 1. Cada vez que generes o edites un archivo en este directorio, agrega o actualiza su fila en la tabla anterior.
 2. En **Temas y Palabras Clave**, coloca sinónimos y términos de búsqueda para facilitar el enrutamiento.

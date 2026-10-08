@@ -3,7 +3,8 @@ import os
 import re
 from pathlib import Path
 from django.conf import settings
-from django.http import JsonResponse, FileResponse, Http404
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse, FileResponse, Http404, HttpResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.clickjacking import xframe_options_exempt
@@ -124,10 +125,12 @@ def remove_index_entry(filename, target_folder=""):
         updated_content = re.sub(pattern, "", content)
         index_file.write_text(updated_content, encoding='utf-8')
 
+@login_required
 def index(request):
     """Renderiza la vista principal del panel"""
     return render(request, 'index.html', {'storage_path': str(STORAGE_DIR)})
 
+@login_required
 @xframe_options_exempt
 def file_raw(request):
     """Sirve archivos binarios y documentos como PDFs y páginas HTML con su MIME type para visualización en el navegador"""
@@ -150,6 +153,7 @@ def file_raw(request):
         return response
     raise Http404("Archivo no encontrado")
 
+@login_required
 @csrf_exempt
 def file_crud(request):
     """CRUD de archivos con soporte para carpetas/subcarpetas y filtrado por ámbito"""
@@ -224,6 +228,7 @@ def file_crud(request):
 
     return JsonResponse({'error': 'Método no soportado'}, status=405)
 
+@login_required
 @csrf_exempt
 def folder_crud(request):
     """API para listar y crear subcarpetas modulares"""
@@ -357,6 +362,7 @@ def append_to_memory(section_title, note, folder=""):
         content = content.rstrip() + f"\n\n## 📌 {section_title}\n- {note}\n"
     mfile.write_text(content, encoding='utf-8')
 
+@login_required
 @csrf_exempt
 def chat_history_api(request):
     """API para consultar o reiniciar el historial persistente de conversaciones por ámbito/carpeta"""
@@ -369,6 +375,7 @@ def chat_history_api(request):
         return JsonResponse({'status': 'ok', 'message': f'Historial de conversaciones ({folder or "Raíz"}) reiniciado.'})
     return JsonResponse({'error': 'Método no soportado'}, status=405)
 
+@login_required
 @csrf_exempt
 def ai_chat(request):
     """
@@ -588,5 +595,13 @@ def ai_chat(request):
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+@xframe_options_exempt
+def presentacion_clase8(request):
+    """Sirve la presentación interactiva HTML de la Clase 8 (10-skill)"""
+    pres_path = Path(settings.BASE_DIR) / 'clase8' / '10-skill' / 'presentacion_clase8.html'
+    if pres_path.exists():
+        return HttpResponse(pres_path.read_text(encoding='utf-8'), content_type='text/html; charset=utf-8')
+    raise Http404("Presentación de Clase 8 no encontrada.")
 
 
